@@ -38,7 +38,7 @@ FRASES_INICI = [
 FRASES_COSSETJAMENT = [
     "⚠️ El termini HA ACABAT i encara veig merda! NETEJA! HAURÉ DE LLOGAR-LI EL PIS A UNS EFICIENTS EXPATS ALEMANYS?!",
     "Estàs lliure d'obligacions? No ho crec. Neteja! Tens problemes amb la higiene, exactament igual que el Peter Parker amb el lloguer.",
-    "Neteja! No em diguis que ho faràs demà. Si les ganes de netejar fossin promesas, la meva dona no m'hagués deixat.",
+    "Neteja! No em diguis que ho faràs demà. Si les ganes de netejar fossin promeses, la meva dona no m'hagués deixat.",
     "Hi ha gent que s'espera que jo agafi el motxo. NETEJA! Dona'm el pis net!",
     "El GREIX de la cuina s'està acumulant... NETEJA! Primer neteges, i després parlem del mercat immobiliari i altres merdes woke!",
     "NETEJA! Si no veig el menjador net en 24 hores, apujo el lloguer un 50% per danys morals!",
@@ -48,11 +48,30 @@ FRASES_COSSETJAMENT = [
     "NETEJA! De què us serveix tenir un pis si el teniu com una quadra de cavalls? Més fregar i menys rondinar!"
 ]
 
+FRASES_TOT_NET = [
+    "Heu marcat les tres zones com a fetes. Sincerament, no em crec que hàgiu passat el motxo, però administrativament esteu lliures per avui.",
+    "La pissarra diu que heu complert amb el període actual. Això no és cap miracle, és la vostra pasterada d'obligació. Verificaré el greix de la cuina més tard.",
+    "Tots tres heu enviat el comandament... Molt bonic sobre el paper. Una altra cosa és la colònia de fongs que teniu muntada darrere del vàter.",
+    "D'acord, el sistema diu que el període està tancat i net. No us flipeu ni us pengeu medalles, que demà ja tornareu a tenir el pis com una quadra.",
+    "He vist els tres xecs verds. Per avui heu salvat el coll, però no em caieu bé igualment. A veure quant dura aquesta falsa sensació d'higiene.",
+    "Avui no us puc renyar perquè la llista està completada. Disfruteu de la treva, que la pròxima setmana us vull veure suar clor de veritat.",
+    "Heu complert amb el tràmit d'aquests dies. Felicitats, actueu com a persones civilitzades per un cop a la vida. No us acostumeu al civisme."
+]
+
+FRASES_TREVA = [
+    "Ara mateix estic tranquil. El pròxim calvari comença el {data}. Aprofiteu per acumular brossa i viure en la immundícia.",
+    "No teniu deures oficials fins al {data}. Podeu deixar que els bacteris formin una nova civilització a la pica de la cuina.",
+    "Treva oficial a la llibreta. El pròxim període comença el {data}. Teniu permís per ser unes rates fins llavors.",
+    "Segons la pissarra esteu lliures fins al {data}. No us flipeu, que sé que esteu utilitzant caixes de pizza buides com a tauletes de nit.",
+    "Fins al {data} no penso pujar a inspeccionar. Aprofiteu per acumular brossa com autèntics mapatxes brossaires.",
+    "Silenci administratiu fins al {data}. Teniu uns dies de marge per deixar el pis com una quadra abans que torni la llei del clor.",
+    "Ara mateix no us puc desnonar per porqueria, el pròxim assalt és el {data}. Aneu criant cucs tranquil·lament."
+]
+
 def carregar_estat():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             estat = json.load(f)
-            # Ens assegurem que el calendari existeix dins del JSON
             if "calendari" not in estat:
                 estat["calendari"] = CALENDARI_DEFECTE
             return estat
@@ -62,7 +81,6 @@ def guardar_estat(estat):
     with open(DATA_FILE, "w") as f:
         json.dump(estat, f)
 
-# Comandament /start per activar el bot al grup del pis
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     estat = carregar_estat()
     estat["chat_id"] = update.effective_chat.id
@@ -73,7 +91,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# Comandament /estat per veure com va el període actual
 async def estat_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
     avui_str = datetime.now().strftime("%Y-%m-%d")
     estat = carregar_estat()
@@ -88,7 +105,8 @@ async def estat_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not periode:
         següents = [p for p in calendari if p["inici"] > avui_str]
         if següents:
-            await update.message.reply_text(f"Ara mateix estic tranquil. El pròxim calvari comença el {següents[0]['inici']}. Aprofiteu per acumular brossa.")
+            frase_escollida = random.choice(FRASES_TREVA).format(data=següents[0]['inici'])
+            await update.message.reply_text(frase_escollida)
         else:
             await update.message.reply_text("S'ha acabat el calendari de la pissarra. Aneu a pintar-ne una altra demanant-li diners al Parker.")
         return
@@ -96,7 +114,7 @@ async def estat_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pendents = [r for r in periode["responsables"] if r not in estat["fet"]]
     
     if not pendents:
-        await update.message.reply_text("Miracle. Tot net. Sou bons nois, us convido a un tros de pastís de taronja de la meva filla. 🍰")
+        await update.message.reply_text(random.choice(FRASES_TOT_NET))
     else:
         bany_resp = periode["responsables"][0]
         cuina_resp = periode["responsables"][1]
@@ -108,13 +126,11 @@ async def estat_manual(update: Update, context: ContextTypes.DEFAULT_TYPE):
         txt += f"📺 **Menjador:** {menjador_resp} {'✅' if menjador_resp in estat['fet'] else '❌ PENDENT'}\n"
         await update.message.reply_text(txt, parse_mode="Markdown")
 
-# Comandament /fet [Mars/Xavi/Pau]
 async def fet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Qui ets? Digues `/fet Mars`, `/fet Xavi` o `/fet Pau`. No em facis perdre el temps.", parse_mode="Markdown")
         return
     
-    # Posem la primera en majúscula i la resta en minúscula (Ex: "mars" -> "Mars")
     qui = context.args[0].strip().capitalize()
     
     if qui not in ["Mars", "Xavi", "Pau"]:
@@ -136,9 +152,7 @@ async def fet(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text(random.choice(frases_gracies))
 
-# NOU COMANDAMENT: /afegir_periode
 async def afegir_periode(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Exemple d'ús: /afegir_periode 2026-09-15 2026-09-18 Xavi Pau Mars
     if len(context.args) < 5:
         await update.message.reply_text(
             "Falten dades, tros de quòniam! L'estructura correcta és:\n"
@@ -149,12 +163,10 @@ async def afegir_periode(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     inici_rebut = context.args[0]
     fi_rebut = context.args[1]
-    # Validem i formategem els noms dels responsables
     resp_bany = context.args[2].capitalize()
     resp_cuina = context.args[3].capitalize()
     resp_menjador = context.args[4].capitalize()
 
-    # Validació ràpida del format de dates
     try:
         datetime.strptime(inici_rebut, "%Y-%m-%d")
         datetime.strptime(fi_rebut, "%Y-%m-%d")
@@ -162,13 +174,11 @@ async def afegir_periode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("El format de data és incorrecte! Revisa que sigui `AAAA-MM-DD` (Ex: 2026-09-15).")
         return
 
-    # Validació dels noms
     noms_valids = ["Mars", "Xavi", "Pau"]
     if resp_bany not in noms_valids or resp_cuina not in noms_valids or resp_menjador not in noms_valids:
         await update.message.reply_text("Els responsables han de ser Mars, Xavi o Pau. No em portis desconeguts al pis.")
         return
 
-    # Carreguem, afegim el període i guardem
     estat = carregar_estat()
     nou_bloc = {
         "inici": inici_rebut,
@@ -177,7 +187,6 @@ async def afegir_periode(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     
     estat["calendari"].append(nou_bloc)
-    # Ordenem automàticament el calendari per data d'inici perquè el bot no es confongui
     estat["calendari"].sort(key=lambda x: x["inici"])
     guardar_estat(estat)
 
@@ -187,7 +196,6 @@ async def afegir_periode(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Ja ho tinc guardat a la meva llibreta."
     )
 
-# Alarma diària automàtica a les 09:00h
 async def revisio_diaria(context: ContextTypes.DEFAULT_TYPE):
     estat = carregar_estat()
     chat_id = estat.get("chat_id")
@@ -223,13 +231,15 @@ async def revisio_diaria(context: ContextTypes.DEFAULT_TYPE):
             if pendents:
                 porcs_mencions = ", ".join([f"*{p}*" for p in pendents])
                 txt = f"🚨 **AVÍS DIARI DEL SR. DITKOVICH** 🚨\n\n" \
-                      f"El termini va acabou el {periode['fi']}. Escolta'm bé, {porcs_mencions}: NO HEU NETEJAT!\n\n" \
+                      f"El termini va acabar el {periode['fi']}. Escolta'm bé, {porcs_mencions}: NO HEU NETEJAT!\n\n" \
                       f"_{random.choice(FRASES_COSSETJAMENT)}_"
                 await context.bot.send_message(chat_id=chat_id, text=txt, parse_mode="Markdown")
+                return
             else:
+                # CORREGIT: Marquem que el període ha finalitzat correctament i continuem mirant el calendari
                 estat["periode_actual_inici"] = ""
                 guardar_estat(estat)
-            return
+                continue
 
 def main():
     TOKEN = "7784916847:AAFGT_AlxA6fASNbY58wkKIIEbMJgCv3Xp4"
@@ -239,7 +249,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("estat", estat_manual))
     application.add_handler(CommandHandler("fet", fet))
-    application.add_handler(CommandHandler("afegir_periode", afegir_periode)) # Registre del nou comando
+    application.add_handler(CommandHandler("afegir_periode", afegir_periode))
 
     job_queue = application.job_queue
     job_queue.run_daily(revisio_diaria, time=time(9, 0, 0))
